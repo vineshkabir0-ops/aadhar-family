@@ -9,8 +9,8 @@ header('Access-Control-Allow-Origin: *');
 // SETTINGS
 // ======================
 
-define('API_KEY', 'toxicadminn');  // change if you want
-define('BASE_URL', 'https://pentestgpt-impds-api-finalapi.onrender.com/search-aadhaar');
+define('API_KEY', 'toxicadminn');  // Change if you want
+define('TARGET_API', 'https://pentestgpt-impds-api-finalapi.onrender.com/search-aadhaar');
 
 // ======================
 // API KEY CHECK
@@ -33,14 +33,13 @@ if ($apikey !== API_KEY) {
 // QUERY CHECK
 // ======================
 
-$search = $_GET['search'] ?? 'A';
-$aadhaar = $_GET['aadhaar'] ?? '';
+$aadhaar = $_GET['aadhaar'] ?? $_GET['query'] ?? '';
 
 if (empty($aadhaar)) {
     echo json_encode([
         "success" => false,
         "message" => "Please provide aadhaar number",
-        "example" => "?apikey=toxicadminn&search=A&aadhaar=202372727238",
+        "example" => "?apikey=toxicadminn&aadhaar=123456789012",
         "developer" => "https://t.me/botadminshere",
         "credit" => "https://t.me/Toxicadminn",
         "private" => "https://t.me/+14rDlunTEzwwZGY1"
@@ -48,18 +47,27 @@ if (empty($aadhaar)) {
     exit;
 }
 
-// sanitize
+// Sanitize (only numbers)
 $aadhaar = preg_replace('/[^0-9]/', '', $aadhaar);
-$search  = preg_replace('/[^A-Za-z]/', '', $search);
+
+if (strlen($aadhaar) !== 12) {
+    echo json_encode([
+        "success" => false,
+        "message" => "Aadhaar must be 12 digits",
+        "developer" => "https://t.me/botadminshere",
+        "credit" => "https://t.me/Toxicadminn"
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    exit;
+}
 
 // ======================
-// TARGET URL
+// BUILD TARGET URL
 // ======================
 
-$url = BASE_URL . "?search=" . urlencode($search) . "&aadhaar=" . urlencode($aadhaar);
+$url = TARGET_API . "?search=A&aadhaar=" . urlencode($aadhaar);
 
 // ======================
-// CURL
+// CURL REQUEST
 // ======================
 
 $ch = curl_init();
@@ -76,10 +84,15 @@ $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
+// ======================
+// ERROR HANDLING
+// ======================
+
 if ($response === false || $httpCode !== 200) {
     echo json_encode([
         "success" => false,
-        "message" => "Failed to fetch data from source",
+        "message" => "Failed to fetch Aadhaar data",
+        "http_code" => $httpCode,
         "developer" => "https://t.me/botadminshere",
         "credit" => "https://t.me/Toxicadminn"
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

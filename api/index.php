@@ -5,55 +5,70 @@ ini_set('display_errors', 0);
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
-// API expiry (change kar dena jab chahe)
-$expiryDate = strtotime('2027-12-31'); // extended for you
-$currentDate = time();
+// ======================
+// SETTINGS
+// ======================
 
-if ($currentDate > $expiryDate) {
+define('API_KEY', 'toxicadminn');  // change if you want
+define('BASE_URL', 'https://pentestgpt-impds-api-finalapi.onrender.com/search-aadhaar');
+
+// ======================
+// API KEY CHECK
+// ======================
+
+$apikey = $_GET['apikey'] ?? '';
+
+if ($apikey !== API_KEY) {
     echo json_encode([
         "success" => false,
-        "message" => "API Expired! Contact @Toxicadminn",
-        "credit" => "@TOXICLAIMS",
-        "channel" => "https://t.me/Toxicadminn"
-    ]);
+        "message" => "Invalid API Key",
+        "developer" => "https://t.me/botadminshere",
+        "credit" => "https://t.me/Toxicadminn",
+        "private" => "https://t.me/+14rDlunTEzwwZGY1"
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
-$remainingDays = floor(($expiryDate - $currentDate) / 86400);
+// ======================
+// QUERY CHECK
+// ======================
 
-$aadhaar = $_GET['aadhaar'] ?? $_GET['number'] ?? null;
+$search = $_GET['search'] ?? 'A';
+$aadhaar = $_GET['aadhaar'] ?? '';
 
-if (!$aadhaar) {
+if (empty($aadhaar)) {
     echo json_encode([
         "success" => false,
-        "message" => "Aadhaar number missing. Use ?aadhaar=XXXXXXXXXXXX",
-        "credit" => "@TOXICLAIMS",
-        "channel" => "https://t.me/Toxicadminn",
-        "days_remaining" => $remainingDays
-    ]);
+        "message" => "Please provide aadhaar number",
+        "example" => "?apikey=toxicadminn&search=A&aadhaar=202372727238",
+        "developer" => "https://t.me/botadminshere",
+        "credit" => "https://t.me/Toxicadminn",
+        "private" => "https://t.me/+14rDlunTEzwwZGY1"
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
-// Clean Aadhaar (only digits)
+// sanitize
 $aadhaar = preg_replace('/[^0-9]/', '', $aadhaar);
+$search  = preg_replace('/[^A-Za-z]/', '', $search);
 
-if (strlen($aadhaar) !== 12) {
-    echo json_encode([
-        "success" => false,
-        "message" => "Invalid Aadhaar format. Must be 12 digits.",
-        "credit" => "@TOXICLAIMS"
-    ]);
-    exit;
-}
+// ======================
+// TARGET URL
+// ======================
 
-$targetUrl = "https://aadharfam.onrender.com/full-search?aadhaar=" . $aadhaar;
+$url = BASE_URL . "?search=" . urlencode($search) . "&aadhaar=" . urlencode($aadhaar);
+
+// ======================
+// CURL
+// ======================
 
 $ch = curl_init();
 curl_setopt_array($ch, [
-    CURLOPT_URL => $targetUrl,
+    CURLOPT_URL => $url,
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_SSL_VERIFYPEER => false,
     CURLOPT_TIMEOUT => 45,
+    CURLOPT_FOLLOWLOCATION => true,
     CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
 ]);
 
@@ -64,33 +79,24 @@ curl_close($ch);
 if ($response === false || $httpCode !== 200) {
     echo json_encode([
         "success" => false,
-        "message" => "Failed to fetch from source (HTTP $httpCode)",
-        "credit" => "@TOXICLAIMS",
-        "channel" => "https://t.me/Toxicadminn"
-    ]);
+        "message" => "Failed to fetch data from source",
+        "developer" => "https://t.me/botadminshere",
+        "credit" => "https://t.me/Toxicadminn"
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     exit;
 }
+
+// ======================
+// FINAL OUTPUT
+// ======================
 
 $data = json_decode($response, true);
 
-if (!$data) {
-    echo json_encode([
-        "success" => false,
-        "message" => "Invalid response from aadharfam",
-        "raw_response" => substr($response, 0, 500),
-        "credit" => "@TOXICLAIMS"
-    ]);
-    exit;
-}
-
-// Final output
 $output = [
     "success" => true,
-    "credit" => "@TOXICLAIMS",
-    "channel" => "https://t.me/Toxicadminn",
-    "api_valid_until" => "Dec 31, 2027",
-    "days_remaining" => $remainingDays,
-    "aadhaar" => $aadhaar,
+    "developer" => "https://t.me/botadminshere",
+    "credit" => "https://t.me/Toxicadminn",
+    "private" => "https://t.me/+14rDlunTEzwwZGY1",
     "result" => $data
 ];
 
